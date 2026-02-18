@@ -1,4 +1,4 @@
-import type { Persona, PersonaConfig } from './types';
+import type { ModelOption, Persona, PersonaConfig } from './types';
 
 export const DEFAULT_PERSONAS: Record<Persona, PersonaConfig> = {
   JAPAN_MARKETER: {
@@ -33,9 +33,11 @@ You are skeptical of "special" requirements. You are professional but focused on
   },
 };
 
-export const MODELS = [
-  "gemini-3-flash-preview",
-  "gemini-3-pro-preview",
+export const MODELS: ModelOption[] = [
+  { id: 'gemini-3-flash-preview',        label: 'Gemini 3 Flash',       provider: 'gemini' },
+  { id: 'gemini-3-pro-preview',          label: 'Gemini 3 Pro',         provider: 'gemini' },
+  { id: 'claude-opus-4-6',               label: 'Claude Opus 4.6',      provider: 'claude-vertex' },
+  { id: 'claude-sonnet-4-5@20250929',    label: 'Claude Sonnet 4.5',    provider: 'claude-vertex' },
 ];
 
 export const LANGUAGES = [

@@ -221,8 +221,8 @@ function MessageBubble({
 // --- Main App ---
 
 export default function App() {
-  const [japanModel, setJapanModel] = useState(MODELS[0]);
-  const [globalModel, setGlobalModel] = useState(MODELS[0]);
+  const [japanModel, setJapanModel] = useState(MODELS[0].id);
+  const [globalModel, setGlobalModel] = useState(MODELS[0].id);
   const [maxTurns, setMaxTurns] = useState(6);
   const [language, setLanguage] = useState('Japanese');
   const [responseLength, setResponseLength] = useState('Normal (about 3-4 paragraphs)');
@@ -405,11 +405,20 @@ export default function App() {
                     disabled={isActive}
                     className="w-full bg-[#2A2A2A] border border-white/5 rounded px-2 py-1.5 text-[10px] outline-none"
                   >
-                    {MODELS.map(m => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
+                    <optgroup label="Gemini" className="bg-[#1A1A1A]">
+                      {MODELS.filter(m => m.provider === 'gemini').map(m => (
+                        <option key={m.id} value={m.id} className="bg-[#1A1A1A]">
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Claude (Vertex AI)" className="bg-[#1A1A1A]">
+                      {MODELS.filter(m => m.provider === 'claude-vertex').map(m => (
+                        <option key={m.id} value={m.id} className="bg-[#1A1A1A]">
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
               ))}

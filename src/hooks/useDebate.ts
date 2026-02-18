@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { GoogleGenAI } from '@google/genai';
+import { MODELS } from '../constants';
 import type { Message, Persona, PersonaConfig, DebateStatus, StreamingMessage } from '../types';
 
 interface DebateConfig {
@@ -13,6 +14,105 @@ interface DebateConfig {
   personas: Record<Persona, PersonaConfig>;
 }
 
+// --- Provider helpers ---
+
+function getProvider(modelId: string) {
+  return MODELS.find(m => m.id === modelId)?.provider ?? 'gemini';
+}
+
+/** Stream Claude via the local API proxy server (SSE). */
+async function* streamClaudeViaServer(
+  params: {
+    model: string;
+    system: string;
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+    temperature?: number;
+  },
+  signal: AbortSignal,
+): AsyncGenerator<string> {
+  const res = await fetch('/api/claude/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+    signal,
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(`Claude API error ${res.status}: ${text}`);
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') return;
+        try {
+          const parsed = JSON.parse(data) as { text?: string; error?: string };
+          if (parsed.error) throw new Error(parsed.error);
+          if (parsed.text) yield parsed.text;
+        } catch (e) {
+          if (e instanceof SyntaxError) continue; // partial JSON — skip
+          throw e;
+        }
+      }
+    }
+  } finally {
+    reader.cancel().catch(() => {});
+  }
+}
+
+// --- Unified stream generator ---
+
+type HistoryEntry = { role: 'user' | 'model'; parts: [{ text: string }] };
+
+async function* generateStream(
+  modelId: string,
+  history: HistoryEntry[],
+  prompt: string,
+  systemInstruction: string,
+  signal: AbortSignal,
+): AsyncGenerator<string> {
+  const provider = getProvider(modelId);
+
+  if (provider === 'claude-vertex') {
+    const messages = [
+      ...history.map(h => ({
+        role: (h.role === 'model' ? 'assistant' : 'user') as 'user' | 'assistant',
+        content: h.parts[0].text,
+      })),
+      { role: 'user' as const, content: prompt },
+    ];
+    yield* streamClaudeViaServer({ model: modelId, system: systemInstruction, messages }, signal);
+  } else {
+    // Gemini
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const stream = await ai.models.generateContentStream({
+      model: modelId,
+      contents: [
+        ...history.map(h => ({ role: h.role as 'user' | 'model', parts: h.parts })),
+        { role: 'user', parts: [{ text: prompt }] },
+      ],
+      config: { systemInstruction, temperature: 0.8 },
+    });
+    for await (const chunk of stream) {
+      yield chunk.text ?? '';
+    }
+  }
+}
+
+// --- Hook ---
+
 export function useDebate(config: DebateConfig) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
@@ -23,11 +123,7 @@ export function useDebate(config: DebateConfig) {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const stop = () => {
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
-  };
+  const stop = () => abortRef.current?.abort();
 
   const reset = () => {
     setMessages([]);
@@ -46,8 +142,8 @@ export function useDebate(config: DebateConfig) {
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const { japanModel, globalModel, maxTurns, language, responseLength, reportContext, additionalContext, personas } = config;
+    const { japanModel, globalModel, maxTurns, language, responseLength, reportContext, additionalContext, personas } =
+      config;
 
     let currentMessages: Message[] = [];
 
@@ -62,7 +158,7 @@ export function useDebate(config: DebateConfig) {
         const persona = personas[currentPersonaKey];
         const otherPersona = personas[otherPersonaKey];
 
-        const history = currentMessages.map(m => ({
+        const history: HistoryEntry[] = currentMessages.map(m => ({
           role: m.role === currentPersonaKey ? 'model' : 'user',
           parts: [{ text: `${personas[m.role].name}: ${m.content}` }],
         }));
@@ -72,36 +168,29 @@ export function useDebate(config: DebateConfig) {
             ? `Start the debate in ${language}. Your name is ${persona.name}. You are speaking to ${otherPersona.name}.
 ${reportContext ? `We are reviewing this report/context: "${reportContext}".` : ''}
 ${additionalContext ? `Additional constraints/context: "${additionalContext}".` : ''}
-Open the discussion. ${reportContext ? 'Use the provided report as the basis for the discussion and aim to refine or challenge its assumptions.' : "Explain why the current 'Global-first' strategy is struggling in the Japanese market."}`
+Open the discussion. ${
+                reportContext
+                  ? 'Use the provided report as the basis for the discussion and aim to refine or challenge its assumptions.'
+                  : "Explain why the current 'Global-first' strategy is struggling in the Japanese market."
+              }`
             : `Respond to the previous point from ${otherPersona.name} in ${language}. Your name is ${persona.name}.
 Address ${otherPersona.name} directly by name. Continue the debate.`;
 
-        // Initialize streaming placeholder
-        setStreamingMessage({ role: currentPersonaKey, content: '', model: currentModel });
-
-        const stream = await ai.models.generateContentStream({
-          model: currentModel,
-          contents: [
-            ...history.map(h => ({ role: h.role as 'user' | 'model', parts: h.parts })),
-            { role: 'user', parts: [{ text: prompt }] },
-          ],
-          config: {
-            systemInstruction: `${persona.systemInstruction}
+        const systemInstruction = `${persona.systemInstruction}
 
 IMPORTANT:
 - Always respond in ${language}.
 - Your name is ${persona.name}.
 - The person you are debating is ${otherPersona.name}.
 - Address them by name.
-- Keep your response length to: ${responseLength}.`,
-            temperature: 0.8,
-          },
-        });
+- Keep your response length to: ${responseLength}.`;
+
+        setStreamingMessage({ role: currentPersonaKey, content: '', model: currentModel });
 
         let fullContent = '';
-        for await (const chunk of stream) {
+        for await (const text of generateStream(currentModel, history, prompt, systemInstruction, signal)) {
           if (signal.aborted) return;
-          fullContent += chunk.text ?? '';
+          fullContent += text;
           setStreamingMessage({ role: currentPersonaKey, content: fullContent, model: currentModel });
         }
 
@@ -132,21 +221,17 @@ The summary must clearly explain WHY simple translation/subtitling fails in Japa
 ${reportContext ? 'Specifically, provide concrete recommendations on how to improve the initial report/context we discussed.' : "Focus on the concept of 'Trust as a Currency' in the Japanese market."}
 ${additionalContext ? `Take into account these constraints: "${additionalContext}".` : ''}`;
 
-      const conclusionStream = await ai.models.generateContentStream({
-        model: japanModel,
-        contents: [
-          ...currentMessages.map(m => ({ role: 'user' as const, parts: [{ text: `${personas[m.role].name}: ${m.content}` }] })),
-          { role: 'user', parts: [{ text: conclusionPrompt }] },
-        ],
-        config: {
-          systemInstruction: `You are a strategic consultant helping ${personas.JAPAN_MARKETER.name} bridge the gap with ${personas.GLOBAL_LEAD.name}. Summarize the core arguments into a persuasive, universal business case. Always respond in ${language}.`,
-        },
-      });
+      const conclusionSystem = `You are a strategic consultant helping ${personas.JAPAN_MARKETER.name} bridge the gap with ${personas.GLOBAL_LEAD.name}. Summarize the core arguments into a persuasive, universal business case. Always respond in ${language}.`;
+
+      const conclusionHistory: HistoryEntry[] = currentMessages.map(m => ({
+        role: 'user',
+        parts: [{ text: `${personas[m.role].name}: ${m.content}` }],
+      }));
 
       let conclusionText = '';
-      for await (const chunk of conclusionStream) {
+      for await (const text of generateStream(japanModel, conclusionHistory, conclusionPrompt, conclusionSystem, signal)) {
         if (signal.aborted) return;
-        conclusionText += chunk.text ?? '';
+        conclusionText += text;
         setConclusionStreaming(conclusionText);
       }
 
@@ -166,16 +251,5 @@ ${additionalContext ? `Take into account these constraints: "${additionalContext
     }
   };
 
-  return {
-    messages,
-    streamingMessage,
-    conclusionStreaming,
-    conclusion,
-    status,
-    turnCount,
-    error,
-    start,
-    stop,
-    reset,
-  };
+  return { messages, streamingMessage, conclusionStreaming, conclusion, status, turnCount, error, start, stop, reset };
 }
