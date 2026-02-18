@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /allowed_users/{email} {
+      // 誰でも読み取り可能（ログイン前チェックのため）
+      // または get 飲みを許可
+      allow get: if true;
+      allow list: if false;
+      allow write: if false; // 管理コンソールからのみ操作
+    }
+  }
+}

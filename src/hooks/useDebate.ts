@@ -28,11 +28,17 @@ async function* streamClaudeViaServer(
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
     temperature?: number;
   },
+  idToken: string | null,
   signal: AbortSignal,
 ): AsyncGenerator<string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (idToken) {
+    headers['Authorization'] = `Bearer ${idToken}`;
+  }
+
   const res = await fetch('/api/claude/stream', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(params),
     signal,
   });
@@ -81,6 +87,7 @@ async function* generateStream(
   history: HistoryEntry[],
   prompt: string,
   systemInstruction: string,
+  idToken: string | null,
   signal: AbortSignal,
 ): AsyncGenerator<string> {
   const provider = getProvider(modelId);
@@ -93,10 +100,10 @@ async function* generateStream(
       })),
       { role: 'user' as const, content: prompt },
     ];
-    yield* streamClaudeViaServer({ model: modelId, system: systemInstruction, messages }, signal);
+    yield* streamClaudeViaServer({ model: modelId, system: systemInstruction, messages }, idToken, signal);
   } else {
     // Gemini
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
     const stream = await ai.models.generateContentStream({
       model: modelId,
       contents: [
@@ -113,7 +120,7 @@ async function* generateStream(
 
 // --- Hook ---
 
-export function useDebate(config: DebateConfig) {
+export function useDebate(config: DebateConfig, idToken: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
   const [conclusionStreaming, setConclusionStreaming] = useState<string | null>(null);
@@ -188,7 +195,7 @@ IMPORTANT:
         setStreamingMessage({ role: currentPersonaKey, content: '', model: currentModel });
 
         let fullContent = '';
-        for await (const text of generateStream(currentModel, history, prompt, systemInstruction, signal)) {
+        for await (const text of generateStream(currentModel, history, prompt, systemInstruction, idToken, signal)) {
           if (signal.aborted) return;
           fullContent += text;
           setStreamingMessage({ role: currentPersonaKey, content: fullContent, model: currentModel });
@@ -229,7 +236,7 @@ ${additionalContext ? `Take into account these constraints: "${additionalContext
       }));
 
       let conclusionText = '';
-      for await (const text of generateStream(japanModel, conclusionHistory, conclusionPrompt, conclusionSystem, signal)) {
+      for await (const text of generateStream(japanModel, conclusionHistory, conclusionPrompt, conclusionSystem, idToken, signal)) {
         if (signal.aborted) return;
         conclusionText += text;
         setConclusionStreaming(conclusionText);

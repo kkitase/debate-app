@@ -30,6 +30,9 @@ import { cn, copyToClipboard, exportAsMarkdown } from './utils';
 import { useDebate } from './hooks/useDebate';
 import { DEFAULT_PERSONAS, MODELS, LANGUAGES, LENGTHS } from './constants';
 import type { Persona, PersonaConfig } from './types';
+import { auth, googleProvider, db } from './lib/firebase';
+import { onIdTokenChanged, signInWithPopup, signOut, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 // --- CopyButton ---
 
@@ -230,8 +233,48 @@ export default function App() {
   const [additionalContext, setAdditionalContext] = useState('');
   const [personas, setPersonas] = useState(DEFAULT_PERSONAS);
   const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isAllowed, setIsAllowed] = useState<boolean | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Check whitelist
+        try {
+          const email = firebaseUser.email;
+          if (!email) throw new Error('Email not found');
+          
+          const userDoc = await getDoc(doc(db, 'allowed_users', email));
+          if (userDoc.exists()) {
+            setIsAllowed(true);
+            setUser(firebaseUser);
+            const token = await firebaseUser.getIdToken();
+            setIdToken(token);
+          } else {
+            console.error('[auth] User not in whitelist:', email);
+            setIsAllowed(false);
+            setUser(null);
+            setIdToken(null);
+            await signOut(auth);
+          }
+        } catch (err) {
+          console.error('[auth] Error checking whitelist:', err);
+          setIsAllowed(false);
+          await signOut(auth);
+        }
+      } else {
+        setUser(null);
+        setIdToken(null);
+        setIsAllowed(null);
+      }
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const debate = useDebate({
     japanModel,
@@ -242,7 +285,7 @@ export default function App() {
     reportContext,
     additionalContext,
     personas,
-  });
+  }, idToken);
 
   const isActive = debate.status === 'debating' || debate.status === 'concluding';
 
@@ -264,6 +307,45 @@ export default function App() {
     exportAsMarkdown(debate.messages, personas, debate.conclusion);
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#141414] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#141414] text-[#E4E3E0] flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md space-y-8 animate-in fade-in zoom-in duration-700">
+          <div className="w-20 h-20 bg-emerald-500 rounded-2xl mx-auto flex items-center justify-center shadow-2xl shadow-emerald-500/20">
+            <Globe className="w-10 h-10 text-black" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-serif italic text-emerald-400">Strategy Lab</h1>
+            <p className="text-sm opacity-60">AI Debate Simulator & Market Readiness Refiner</p>
+          </div>
+          <p className="text-xs leading-relaxed opacity-40 font-mono uppercase tracking-widest">
+            Authentication Required to Access Vertex AI & Gemini Models
+          </p>
+          {isAllowed === false && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl animate-in fade-in zoom-in duration-300">
+              <p className="text-red-400 text-xs">ごめんなさい、あなたのメールアドレスは許可リストにありません。管理者に連絡してくださいわ。🌹</p>
+            </div>
+          )}
+          <button
+            onClick={() => signInWithPopup(auth, googleProvider)}
+            className="w-full py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            Sign in with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#141414] text-[#E4E3E0] font-sans selection:bg-emerald-500/30">
       {/* Header */}
@@ -280,6 +362,17 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-6">
+            {user && (
+              <div className="flex items-center gap-3 pr-4 border-r border-[#2A2A2A]">
+                <img src={user.photoURL || ''} alt="" className="w-6 h-6 rounded-full border border-white/10" />
+                <button 
+                  onClick={() => signOut(auth)}
+                  className="text-[10px] uppercase opacity-40 hover:opacity-100 transition-opacity"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-4 text-[11px] font-mono">
               <div className="flex items-center gap-2">
                 <Languages className="w-3 h-3 opacity-40" />
