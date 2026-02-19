@@ -16,16 +16,22 @@ Debate App の Cloud Build と Cloud Run へのデプロイを自動化・標準
 # 現在のブランチを確認 (mainブランチであることを確認)
 git branch --show-current
 
-# 未コミットの変更がないか確認
+# 未追跡も含めたすべての変更がないか確認
 git status
+
+# もし新しく追加したファイル（コンポーネントやテストなど）があれば、必ず git add してコミットすること
 ```
 
 ## Step 2: セキュリティと健全性の検証
 
 デプロイ前にプロジェクトの健全性を検証する。
 
-1. 脆弱性スキャン: `npm audit` を実行して重大な脆弱性がないか確認
-2. 自動修正可能なものは `npm audit fix` または overrides で対応
+1. **セキュリティスキャンを実行せよ**
+   - コマンド: `/security-scan`
+   - 手動の `npm audit` ではなく、上記ワークフローを呼び出すこと。
+2. **コード品質を検証せよ**
+   - コマンド: `/verify-code`
+   - Type Check, Lint, Test がすべて通過することを確認する。
 
 ## Step 3: Cloud Build でのイメージ作成
 
