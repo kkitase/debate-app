@@ -2,7 +2,7 @@ import type { ModelOption, Persona, PersonaConfig } from './types';
 
 export const DEFAULT_PERSONAS: Record<Persona, PersonaConfig> = {
   JAPAN_MARKETER: {
-    name: "ねごりん",
+    name: "Shohei",
     title: "Senior Marketer, Google Cloud Japan",
     description: "Expert in Japanese B2B market nuances. Passionate about localizing for trust.",
     color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/5",
@@ -31,7 +31,7 @@ export const DEFAULT_PERSONAS: Record<Persona, PersonaConfig> = {
 - 言語：日本語（ただし、外資系企業のレポートらしく、論理的で簡潔なビジネス文書として）。`,
   },
   GLOBAL_LEAD: {
-    name: "トランプ",
+    name: "Donald",
     title: "Global Marketing Lead, Google Cloud",
     description: "Efficiency-driven leader focused on scalability and unified branding.",
     color: "text-amber-400 border-amber-500/30 bg-amber-500/5",
@@ -70,12 +70,12 @@ export const MODELS: ModelOption[] = [
 ];
 
 export const LANGUAGES = [
-  { label: "日本語", value: "Japanese" },
   { label: "English", value: "English" },
+  { label: "Japanese", value: "Japanese" },
 ];
 
 export const LENGTHS = [
-  { label: "短い", value: "Short (about 1-2 paragraphs)" },
-  { label: "普通", value: "Normal (about 3-4 paragraphs)" },
-  { label: "長い", value: "Long (detailed analysis)" },
+  { label: "Short", value: "Short (about 1-2 paragraphs)" },
+  { label: "Normal", value: "Normal (about 3-4 paragraphs)" },
+  { label: "Long", value: "Long (detailed analysis)" },
 ];
