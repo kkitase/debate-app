@@ -27,7 +27,7 @@ const AppStateContext = createContext<AppStateContextType | undefined>(undefined
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState('Japanese');
   const [responseLength, setResponseLength] = useState('Normal (about 3-4 paragraphs)');
-  const [maxTurns, setMaxTurns] = useState(6);
+  const [maxTurns, setMaxTurns] = useState(3);
   const [japanModel, setJapanModel] = useState(MODELS[0].id);
   const [globalModel, setGlobalModel] = useState(MODELS[0].id);
   const [reportContext, setReportContext] = useState('');
