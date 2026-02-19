@@ -24,14 +24,14 @@ export const MobileSettings = React.memo(function MobileSettings({
   return (
     <div className="lg:hidden space-y-6 pb-6 border-b border-white/5 font-mono">
       <div className="space-y-3">
-        <label className="text-[10px] uppercase opacity-40 flex items-center gap-2">
+        <label className="text-xs uppercase opacity-40 flex items-center gap-2">
           <Languages className="w-3 h-3" /> Language
         </label>
         <select
           value={language}
           onChange={e => setLanguage(e.target.value)}
           disabled={isActive}
-          className="w-full bg-[#2A2A2A] border border-white/5 rounded px-3 py-2 text-xs outline-none"
+          className="w-full bg-[#2A2A2A] border border-white/5 rounded px-3 py-2 text-sm outline-none"
         >
           {LANGUAGES.map(l => (
             <option key={l.value} value={l.value} className="bg-[#1A1A1A]">
@@ -42,14 +42,14 @@ export const MobileSettings = React.memo(function MobileSettings({
       </div>
 
       <div className="space-y-3">
-        <label className="text-[10px] uppercase opacity-40 flex items-center gap-2">
+        <label className="text-xs uppercase opacity-40 flex items-center gap-2">
           <Sliders className="w-3 h-3" /> Response Length
         </label>
         <select
           value={responseLength}
           onChange={e => setResponseLength(e.target.value)}
           disabled={isActive}
-          className="w-full bg-[#2A2A2A] border border-white/5 rounded px-3 py-2 text-xs outline-none"
+          className="w-full bg-[#2A2A2A] border border-white/5 rounded px-3 py-2 text-sm outline-none"
         >
           {LENGTHS.map(l => (
             <option key={l.value} value={l.value} className="bg-[#1A1A1A]">
@@ -60,7 +60,7 @@ export const MobileSettings = React.memo(function MobileSettings({
       </div>
 
       <div className="space-y-3">
-        <label className="text-[10px] uppercase opacity-40 flex items-center gap-2">
+        <label className="text-xs uppercase opacity-40 flex items-center gap-2">
             Turns
         </label>
         <input
@@ -70,7 +70,7 @@ export const MobileSettings = React.memo(function MobileSettings({
           value={maxTurns}
           onChange={e => setMaxTurns(parseInt(e.target.value))}
           disabled={isActive}
-          className="w-full bg-[#2A2A2A] border border-white/5 rounded px-3 py-2 text-xs outline-none"
+          className="w-full bg-[#2A2A2A] border border-white/5 rounded px-3 py-2 text-sm outline-none"
         />
       </div>
     </div>

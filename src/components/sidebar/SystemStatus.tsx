@@ -19,10 +19,10 @@ export const SystemStatus = React.memo(function SystemStatus({
 }: SystemStatusProps) {
   return (
     <section className="p-4 rounded-lg border border-[#2A2A2A] bg-black/20">
-      <h2 className="text-[10px] font-mono uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
+      <h2 className="text-xs font-mono uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
         <Terminal className="w-3 h-3" /> System Status
       </h2>
-      <div className="space-y-2 font-mono text-[10px]">
+      <div className="space-y-2 font-mono text-xs">
         <div className="flex justify-between">
           <span className="opacity-50">Status:</span>
           <span

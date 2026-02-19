@@ -32,7 +32,7 @@ export function Sidebar({ showSidebar, setShowSidebar }: { showSidebar: boolean;
         showSidebar ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="lg:hidden flex items-center justify-between mb-6 pb-4 border-b border-white/5">
-          <span className="text-xs font-bold uppercase tracking-widest text-emerald-500">Configuration</span>
+          <span className="text-sm font-bold uppercase tracking-widest text-emerald-500">Configuration</span>
           <button 
             onClick={() => setShowSidebar(false)}
             className="p-2 hover:bg-white/5 rounded-full transition-colors"
@@ -54,7 +54,7 @@ export function Sidebar({ showSidebar, setShowSidebar }: { showSidebar: boolean;
 
         {/* Report Context */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
+          <h2 className="text-xs font-mono uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
             <FileUp className="w-3 h-3" /> Report / Context to Refine
           </h2>
           <textarea
@@ -62,13 +62,13 @@ export function Sidebar({ showSidebar, setShowSidebar }: { showSidebar: boolean;
             onChange={e => setReportContext(e.target.value)}
             placeholder="Paste an existing report, whitepaper draft, or market assumption here..."
             disabled={isActive}
-            className="w-full h-24 bg-black/30 border border-[#2A2A2A] rounded-lg p-3 text-xs leading-relaxed outline-none focus:border-emerald-500/50 transition-colors resize-none"
+            className="w-full h-24 bg-black/30 border border-[#2A2A2A] rounded-lg p-3 text-sm leading-relaxed outline-none focus:border-emerald-500/50 transition-colors resize-none"
           />
         </section>
 
         {/* Additional Constraints */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
+          <h2 className="text-xs font-mono uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
             <Settings className="w-3 h-3" /> Additional Constraints
           </h2>
           <textarea
@@ -76,7 +76,7 @@ export function Sidebar({ showSidebar, setShowSidebar }: { showSidebar: boolean;
             onChange={e => setAdditionalContext(e.target.value)}
             placeholder="e.g. 'We cannot send many emails, so prioritize high-impact campaigns'..."
             disabled={isActive}
-            className="w-full h-24 bg-black/30 border border-[#2A2A2A] rounded-lg p-3 text-xs leading-relaxed outline-none focus:border-emerald-500/50 transition-colors resize-none"
+            className="w-full h-24 bg-black/30 border border-[#2A2A2A] rounded-lg p-3 text-sm leading-relaxed outline-none focus:border-emerald-500/50 transition-colors resize-none"
           />
         </section>
 
@@ -91,7 +91,7 @@ export function Sidebar({ showSidebar, setShowSidebar }: { showSidebar: boolean;
 
         {/* Personas */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest opacity-40 mb-4">Participants</h2>
+          <h2 className="text-xs font-mono uppercase tracking-widest opacity-40 mb-4">Participants</h2>
           <div className="space-y-4">
             {(Object.entries(personas) as [Persona, PersonaConfig][]).map(([key, p]) => (
               <PersonaCard
