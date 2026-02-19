@@ -21,6 +21,7 @@ Gemini / Claude を使った **AI ディベートシミュレーター**。2つ�
 Claude は API キーではなく **Google Cloud の IAM 認証**で動作するため、ブラウザから直接呼び出せません。Express プロキシサーバーが仲介します。
 
 認証フロー:
+
 1. ユーザーが Firebase Auth（Google ログイン）でサインイン
 2. Firebase ID Token を取得してリクエストヘッダーに付与
 3. サーバーが Token を検証 + Firestore のホワイトリスト照合
@@ -30,13 +31,13 @@ Claude は API キーではなく **Google Cloud の IAM 認証**で動作する
 
 ## 必要なもの
 
-| 項目 | 用途 |
-|---|---|
-| Node.js 18+ | フロントエンド・サーバーの実行 |
-| Google Cloud CLI (`gcloud`) | Vertex AI 認証・デプロイ |
-| Firebase プロジェクト | 認証（Google ログイン）+ ユーザーホワイトリスト |
-| GCP プロジェクト | Vertex AI（Claude）の呼び出し |
-| Google AI Studio API キー | Gemini モデルの呼び出し |
+| 項目                        | 用途                                            |
+| --------------------------- | ----------------------------------------------- |
+| Node.js 18+                 | フロントエンド・サーバーの実行                  |
+| Google Cloud CLI (`gcloud`) | Vertex AI 認証・デプロイ                        |
+| Firebase プロジェクト       | 認証（Google ログイン）+ ユーザーホワイトリスト |
+| GCP プロジェクト            | Vertex AI（Claude）の呼び出し                   |
+| Google AI Studio API キー   | Gemini モデルの呼び出し                         |
 
 > Firebase プロジェクトと GCP プロジェクトは同じでも別でも構いません。
 
@@ -135,13 +136,13 @@ VITE_FIREBASE_APP_ID="your_app_id"
 
 ### 変数の使われ方まとめ
 
-| 変数 | どこで使うか |
-|---|---|
-| `VITE_*` | フロントエンド（Vite ビルド時に埋め込み） |
-| `VERTEX_PROJECT_ID` | サーバー：Vertex AI の呼び出し先プロジェクト |
-| `VERTEX_REGION` | サーバー：Claude モデルのリージョン |
-| `FIREBASE_PROJECT_ID` | サーバー：Firebase ID Token の検証プロジェクト |
-| `GEMINI_API_KEY` | サーバーサイド予約（現在 Gemini はブラウザ直呼び出し） |
+| 変数                  | どこで使うか                                           |
+| --------------------- | ------------------------------------------------------ |
+| `VITE_*`              | フロントエンド（Vite ビルド時に埋め込み）              |
+| `VERTEX_PROJECT_ID`   | サーバー：Vertex AI の呼び出し先プロジェクト           |
+| `VERTEX_REGION`       | サーバー：Claude モデルのリージョン                    |
+| `FIREBASE_PROJECT_ID` | サーバー：Firebase ID Token の検証プロジェクト         |
+| `GEMINI_API_KEY`      | サーバーサイド予約（現在 Gemini はブラウザ直呼び出し） |
 
 ---
 
@@ -149,11 +150,11 @@ VITE_FIREBASE_APP_ID="your_app_id"
 
 デフォルトペルソナは `src/constants.ts` の `DEFAULT_PERSONAS` で定義されています。
 
-| フィールド | 説明 |
-|---|---|
-| `name` | UI に表示される名前 |
-| `title` | 役職（サブテキスト） |
-| `description` | ペルソナカードの説明文 |
+| フィールド          | 説明                        |
+| ------------------- | --------------------------- |
+| `name`              | UI に表示される名前         |
+| `title`             | 役職（サブテキスト）        |
+| `description`       | ペルソナカードの説明文      |
 | `systemInstruction` | AI に渡すシステムプロンプト |
 
 UIからも一時的に変更可能（リセットボタンで `DEFAULT_PERSONAS` に戻る）。永続的に変えたい場合は `src/constants.ts` を直接編集してください。
@@ -226,24 +227,25 @@ Cloud Run の URL（`https://xxxx.run.app`）が払い出されたら:
 
 ## 利用可能なモデル
 
-| モデル | プロバイダー | ID |
-|---|---|---|
-| Gemini 3 Flash | Google AI (ブラウザ直呼び出し) | `gemini-3-flash-preview` |
-| Gemini 3 Pro | Google AI (ブラウザ直呼び出し) | `gemini-3-pro-preview` |
-| Claude Opus 4.6 | Vertex AI (サーバー経由) | `claude-opus-4-6` |
-| Claude Sonnet 4.5 | Vertex AI (サーバー経由) | `claude-sonnet-4-5` |
+| モデル            | プロバイダー                   | ID                       |
+| ----------------- | ------------------------------ | ------------------------ |
+| Gemini 3 Flash    | Google AI (ブラウザ直呼び出し) | `gemini-3-flash-preview` |
+| Gemini 3 Pro      | Google AI (ブラウザ直呼び出し) | `gemini-3-pro-preview`   |
+| Gemini 3.1 Pro    | Google AI (ブラウザ直呼び出し) | `gemini-3.1-pro-preview` |
+| Claude Opus 4.6   | Vertex AI (サーバー経由)       | `claude-opus-4-6`        |
+| Claude Sonnet 4.5 | Vertex AI (サーバー経由)       | `claude-sonnet-4-5`      |
 
 ---
 
 ## スクリプト
 
-| コマンド | 説明 |
-|---|---|
-| `npm run dev:all` | Vite + API サーバーを同時起動（推奨） |
-| `npm run dev` | Vite dev server のみ（port 3000） |
+| コマンド             | 説明                                   |
+| -------------------- | -------------------------------------- |
+| `npm run dev:all`    | Vite + API サーバーを同時起動（推奨）  |
+| `npm run dev`        | Vite dev server のみ（port 3000）      |
 | `npm run dev:server` | Express proxy server のみ（port 3001） |
-| `npm run build` | プロダクションビルド |
-| `npm run lint` | TypeScript 型チェック |
+| `npm run build`      | プロダクションビルド                   |
+| `npm run lint`       | TypeScript 型チェック                  |
 
 ---
 

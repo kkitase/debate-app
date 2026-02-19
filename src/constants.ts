@@ -64,6 +64,7 @@ export const DEFAULT_PERSONAS: Record<Persona, PersonaConfig> = {
 export const MODELS: ModelOption[] = [
   { id: 'gemini-3-flash-preview',        label: 'Gemini 3 Flash',       provider: 'gemini' },
   { id: 'gemini-3-pro-preview',          label: 'Gemini 3 Pro',         provider: 'gemini' },
+  { id: 'gemini-3.1-pro-preview',        label: 'Gemini 3.1 Pro',       provider: 'gemini' },
   { id: 'claude-opus-4-6',               label: 'Claude Opus 4.6',      provider: 'claude-vertex' },
   { id: 'claude-sonnet-4-5',            label: 'Claude Sonnet 4.5',    provider: 'claude-vertex' },
 ];
